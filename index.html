@@ -174,6 +174,8 @@
     .sq-last-from { background-color: rgba(250, 204, 21, 0.36) !important; }
     .sq-last-to { background-color: rgba(250, 204, 21, 0.52) !important; }
     .sq-selected { background-color: rgba(56, 189, 248, 0.45) !important; }
+    .sq-wrong { background-color: rgba(244, 63, 94, 0.55) !important; }
+    .sq-solved { background-color: rgba(34, 197, 94, 0.5) !important; }
     .sq-check { background: radial-gradient(circle, rgba(239,68,68,0.88) 0%, rgba(239,68,68,0.28) 65%, transparent 100%) !important; }
 
     .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -204,35 +206,50 @@
       transition: transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
       will-change: transform;
     }
+
+    @keyframes shakeBoard {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+    .board-shake {
+      animation: shakeBoard 0.25s ease-in-out 2;
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col items-center pb-8">
 
-  <!-- ВЕРХНЯЯ ПАНЕЛЬ НАВИГАЦИИ -->
-  <header class="w-full max-w-lg px-3.5 pt-3 pb-2 flex items-center justify-between gap-2 sticky top-0 z-30" style="background: linear-gradient(to bottom, var(--bg-base) 72%, transparent);">
-    <div class="flex items-center gap-2 shrink-0">
+  <!-- ==========================================================================
+       ВЕРХНЯЯ ПАНЕЛЬ НАВИГАЦИИ (3 ВКЛАДКИ: АНАЛИЗ / ЗАДАЧИ / СТАТИСТИКА)
+       ========================================================================== -->
+  <header class="w-full max-w-lg px-3 pt-3 pb-2 flex items-center justify-between gap-1.5 sticky top-0 z-30" style="background: linear-gradient(to bottom, var(--bg-base) 72%, transparent);">
+    <div class="flex items-center gap-1.5 shrink-0">
       <div class="w-8 h-8 rounded-xl flex items-center justify-center glass-card" style="color: var(--accent-primary);">
         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
           <path d="M9 3h6"/><path d="M12 3v3"/><path d="M8 9h8l-1 8H9L8 9z"/><path d="M6 20h12"/><path d="M7 17h10"/>
         </svg>
       </div>
-      <span class="font-black text-base tracking-tight">Coach<span style="color: var(--accent-primary);">AI</span></span>
+      <span class="font-black text-sm sm:text-base tracking-tight">Coach<span style="color: var(--accent-primary);">AI</span></span>
     </div>
 
-    <div class="glass-card p-1 flex items-center gap-1">
-      <button id="tabBtnAnalysis" onclick="switchTab('analysis')" class="px-3.5 py-1.5 rounded-xl text-xs font-black transition-all btn-accent">
+    <div class="glass-card p-1 flex items-center gap-0.5">
+      <button id="tabBtnAnalysis" onclick="switchTab('analysis')" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-black transition-all btn-accent">
         Анализ
       </button>
-      <button id="tabBtnStats" onclick="switchTab('stats')" class="px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all" style="color: var(--text-secondary);">
-        Статистика
+      <button id="tabBtnPuzzles" onclick="switchTab('puzzles')" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-extrabold transition-all flex items-center gap-1" style="color: var(--text-secondary);">
+        <span>Задачи</span>
+        <span id="puzzlesBadgeCount" class="font-mono text-[9px] px-1.5 py-0.2 rounded-md bg-sky-500/20 text-sky-300">5</span>
+      </button>
+      <button id="tabBtnStats" onclick="switchTab('stats')" class="px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-extrabold transition-all" style="color: var(--text-secondary);">
+        Стата
       </button>
     </div>
 
     <div class="flex items-center gap-1.5 shrink-0">
-      <button onclick="openCoachModal()" title="Выбор наставника" class="w-9 h-9 rounded-xl btn-surface flex items-center justify-center overflow-hidden p-0.5">
+      <button onclick="openCoachModal()" title="Выбор наставника" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl btn-surface flex items-center justify-center overflow-hidden p-0.5">
         <div id="headerCoachAvatar" class="w-full h-full rounded-lg overflow-hidden flex items-center justify-center"></div>
       </button>
-      <button onclick="openSettings()" title="Настройки" class="w-9 h-9 rounded-xl btn-surface flex items-center justify-center" style="color: var(--text-primary);">
+      <button onclick="openSettings()" title="Настройки" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl btn-surface flex items-center justify-center" style="color: var(--text-primary);">
         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
         </svg>
@@ -241,14 +258,17 @@
   </header>
 
   <!-- ==========================================================================
-       ВКЛАДКА 1: АНАЛИЗ ПАРТИИ И ДОСКА
+       ВКЛАДКА 1: АНАЛИЗ ПАРТИИ И ДЕТЕКТОР ЛОВУШЕК
        ========================================================================== -->
   <main id="viewAnalysis" class="w-full max-w-lg px-3.5 flex flex-col gap-3">
-    <!-- Статус движка и кнопка запуска -->
+    <!-- Статус движка, дебют и кнопка запуска -->
     <div class="glass-card px-3 py-2 flex items-center justify-between gap-2">
       <div class="flex items-center gap-2 min-w-0">
         <span id="engineDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 shrink-0"></span>
-        <span id="engineStatus" class="text-xs font-extrabold truncate" style="color: var(--text-secondary);">Masters DB + Stockfish готовы</span>
+        <div class="min-w-0">
+          <div id="engineStatus" class="text-xs font-extrabold truncate" style="color: var(--text-primary);">Masters DB + Stockfish готовы</div>
+          <div id="openingSubtitle" class="text-[10px] font-bold truncate" style="color: var(--text-secondary);">Дебют: Ожидание партии</div>
+        </div>
       </div>
       <div class="flex items-center gap-1.5 shrink-0">
         <button onclick="flipBoard()" title="Перевернуть доску" class="w-8 h-8 rounded-xl btn-surface flex items-center justify-center" style="color: var(--text-secondary);">
@@ -290,9 +310,10 @@
     <div class="glass-card p-3 flex items-start gap-3">
       <button onclick="openCoachModal()" id="coachAvatar" class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden border transition-transform active:scale-95" style="background: rgba(56,189,248,0.12); border-color: var(--border-card);"></button>
       <div class="flex-1 min-w-0">
-        <div class="flex items-center gap-2 flex-wrap mb-1">
+        <div class="flex items-center gap-1.5 flex-wrap mb-1">
           <button onclick="openCoachModal()" id="coachNameBadge" class="text-[11px] font-black px-2 py-0.5 rounded-lg transition-colors" style="background: rgba(255,255,255,0.08); color: var(--text-secondary);">Рей Аянами</button>
           <span id="moveBadge" class="hidden text-[11px] font-black px-2 py-0.5 rounded-lg"></span>
+          <span id="trapBadge" class="hidden text-[10px] font-black px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-400/30">⚠️ Дебютная ловушка</span>
           <span id="moveTitle" class="text-sm font-black truncate">Синхронизация готова</span>
         </div>
         <p id="coachText" class="text-xs leading-relaxed font-bold" style="color: var(--text-secondary);">
@@ -330,8 +351,13 @@
     <!-- Список ошибок пользователя -->
     <div class="glass-card p-3 flex flex-col gap-2">
       <div class="flex items-center justify-between">
-        <span class="text-[11px] font-black uppercase tracking-wider" style="color: var(--text-secondary);">Ошибки и упущенные шансы</span>
-        <span id="mistakesCountBadge" class="font-mono text-xs font-black px-2 py-0.5 rounded-lg" style="background: rgba(255,255,255,0.08);">0</span>
+        <span class="text-[11px] font-black uppercase tracking-wider" style="color: var(--text-secondary);">Ошибки и дебютные сбои</span>
+        <div class="flex items-center gap-2">
+          <button id="btnTrainMistakesShortcut" onclick="switchTab('puzzles')" class="hidden text-[10px] font-black px-2 py-0.5 rounded-lg bg-sky-500/20 text-sky-300">
+            Отработать в задачах →
+          </button>
+          <span id="mistakesCountBadge" class="font-mono text-xs font-black px-2 py-0.5 rounded-lg" style="background: rgba(255,255,255,0.08);">0</span>
+        </div>
       </div>
       <div id="mistakesList" class="flex flex-col gap-1.5 max-h-48 overflow-y-auto no-scrollbar">
         <p class="text-xs font-bold py-2 text-center" style="color: var(--text-secondary);">Загрузи партию и нажми «Анализ»</p>
@@ -340,7 +366,70 @@
   </main>
 
   <!-- ==========================================================================
-       ВКЛАДКА 2: СТАТИСТИКА И КРИВАЯ ЭЛО
+       ВКЛАДКА 2: ТРЕНАЖЁР ЗАДАЧ ИЗ СВОИХ ЗЕВКОВ (BLUNDER TRAINER)
+       ========================================================================== -->
+  <main id="viewPuzzles" class="hidden w-full max-w-lg px-3.5 flex flex-col gap-3">
+    <!-- Верхняя панель задачи: счётчик серии и источник -->
+    <div class="glass-card px-3.5 py-2.5 flex items-center justify-between gap-2">
+      <div class="min-w-0">
+        <div class="flex items-center gap-2">
+          <span id="puzzleTurnDot" class="w-3 h-3 rounded-full bg-white border border-slate-500 shrink-0"></span>
+          <h2 id="puzzlePromptTitle" class="text-xs sm:text-sm font-black truncate">Найди лучший ход за Белых</h2>
+        </div>
+        <p id="puzzleSourceSubtitle" class="text-[10px] font-bold truncate mt-0.5" style="color: var(--text-secondary);">
+          Тактика · Базовый набор (запусти Анализ для своих партий)
+        </p>
+      </div>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <div class="px-2.5 py-1 rounded-xl text-center" style="background: rgba(255,255,255,0.06);">
+          <div class="font-mono text-xs font-black text-emerald-400" id="puzzleStreakVal">🔥 0</div>
+          <div class="text-[9px] font-bold" style="color: var(--text-secondary);">серия</div>
+        </div>
+        <div class="px-2.5 py-1 rounded-xl text-center" style="background: rgba(255,255,255,0.06);">
+          <div class="font-mono text-xs font-black" style="color: var(--accent-primary);" id="puzzleSolvedTotal">0</div>
+          <div class="text-[9px] font-bold" style="color: var(--text-secondary);">решено</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Интерактивная доска задачи -->
+    <div id="puzzleBoardContainer" class="relative w-full aspect-square rounded-2xl overflow-hidden border shadow-2xl" style="border-color: var(--border-card);">
+      <div id="puzzleBoard" class="w-full h-full grid grid-cols-8 grid-rows-8"></div>
+      <svg id="puzzleArrows" class="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 800 800"></svg>
+    </div>
+
+    <!-- Карточка обратной связи Рей / Слоуна в режиме задач -->
+    <div class="glass-card p-3 flex items-start gap-3">
+      <div id="puzzleCoachAvatar" class="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden border" style="background: rgba(56,189,248,0.12); border-color: var(--border-card);"></div>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 mb-0.5">
+          <span id="puzzleCoachName" class="text-[11px] font-black px-2 py-0.5 rounded-lg" style="background: rgba(255,255,255,0.08); color: var(--text-secondary);">Рей Аянами</span>
+          <span id="puzzleStatusBadge" class="text-[11px] font-black px-2 py-0.5 rounded-lg bg-sky-500/20 text-sky-300">Поиск решения</span>
+        </div>
+        <p id="puzzleCoachText" class="text-xs leading-relaxed font-bold" style="color: var(--text-secondary);">
+          Нажми на фигуру и сделай лучший ход. В реальной партии здесь была допущена ошибка.
+        </p>
+      </div>
+    </div>
+
+    <!-- Кнопки управления задачей -->
+    <div class="grid grid-cols-3 gap-2">
+      <button onclick="showPuzzleHint()" class="btn-surface py-2.5 px-3 text-xs font-black flex items-center justify-center gap-1.5" style="color: #facc15;">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+        <span>Подсказка</span>
+      </button>
+      <button onclick="retryCurrentPuzzle()" class="btn-surface py-2.5 px-3 text-xs font-black flex items-center justify-center gap-1.5">
+        <span>Заново</span>
+      </button>
+      <button onclick="nextPuzzle()" class="btn-accent py-2.5 px-3 text-xs flex items-center justify-center gap-1">
+        <span>Дальше</span>
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      </button>
+    </div>
+  </main>
+
+  <!-- ==========================================================================
+       ВКЛАДКА 3: СТАТИСТИКА И КРИВАЯ ЭЛО
        ========================================================================== -->
   <main id="viewStats" class="hidden w-full max-w-lg px-3.5 flex flex-col gap-3">
     <!-- Круговая диаграмма всех исходов -->
@@ -451,7 +540,6 @@
       </div>
 
       <div class="flex flex-col gap-2.5">
-        <!-- Тренер Слоун -->
         <button onclick="selectCoach('sloane')" id="coachCardSloane" class="w-full p-3 rounded-2xl border text-left flex items-center gap-3 transition-all">
           <div id="modalAvatarSloane" class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden" style="background: rgba(56,189,248,0.14);"></div>
           <div class="flex-1 min-w-0">
@@ -465,7 +553,6 @@
           </div>
         </button>
 
-        <!-- Рей Аянами -->
         <div id="coachCardRei" class="w-full p-3 rounded-2xl border flex flex-col gap-2.5 transition-all">
           <button onclick="selectCoach('rei')" class="w-full text-left flex items-center gap-3">
             <div id="modalAvatarRei" class="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden" style="background: rgba(56,189,248,0.14);"></div>
@@ -483,7 +570,6 @@
             </div>
           </button>
 
-          <!-- Загрузка своей картинки Рей прямо из галереи телефона -->
           <div class="flex items-center gap-2 pt-1 border-t" style="border-color: var(--border-card);">
             <label class="flex-1 py-1.5 px-2.5 rounded-xl btn-surface text-[11px] font-extrabold text-center cursor-pointer flex items-center justify-center gap-1.5" style="color: var(--accent-primary);">
               <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
@@ -499,12 +585,23 @@
     </div>
   </div>
 
-  <!-- МОДАЛЬНОЕ ОКНО НАСТРОЕК -->
+  <!-- МОДАЛЬНОЕ ОКНО НАСТРОЕК (ТЕМЫ + ЗВУК + ГЛУБИНА) -->
   <div id="settingsModal" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 bg-black/70 backdrop-blur-sm">
     <div class="glass-modal w-full max-w-md rounded-3xl p-4 flex flex-col gap-3.5">
       <div class="flex items-center justify-between">
         <h3 class="text-base font-black">Настройки интерфейса</h3>
         <button onclick="closeSettings()" class="w-8 h-8 rounded-xl btn-surface flex items-center justify-center font-black">✕</button>
+      </div>
+
+      <!-- Переключатель синтезатора звуков -->
+      <div class="flex items-center justify-between p-3 rounded-2xl border" style="background: rgba(255,255,255,0.03); border-color: var(--border-card);">
+        <div>
+          <div class="text-xs font-black">Звуки ходов и тактики</div>
+          <div class="text-[10px] font-bold" style="color: var(--text-secondary);">Синтезатор дерева, шахов и зевков</div>
+        </div>
+        <button id="btnSoundToggle" onclick="toggleSound()" class="px-3.5 py-1.5 rounded-xl text-xs font-black btn-accent">
+          Вкл
+        </button>
       </div>
 
       <div>
@@ -569,6 +666,77 @@
 
   <script>
     /* ==========================================================================
+       СИНТЕЗАТОР ЗВУКОВ WEB AUDIO API (БЕЗ ВНЕШНИХ MP3 ФАЙЛОВ)
+       ========================================================================== */
+    let soundEnabled = localStorage.getItem('coachai_sound') !== 'off';
+    let audioCtx = null;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (Ctx) audioCtx = new Ctx();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => {});
+      }
+      return audioCtx;
+    }
+
+    function playChessSound(type) {
+      if (!soundEnabled) return;
+      const ctx = getAudioContext();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+
+      const tone = (freq, endFreq, dur, gainVal, wave = 'triangle', delay = 0) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = wave;
+        osc.frequency.setValueAtTime(freq, now + delay);
+        if (endFreq) osc.frequency.exponentialRampToValueAtTime(endFreq, now + delay + dur);
+        gain.gain.setValueAtTime(gainVal, now + delay);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + delay + dur);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + delay);
+        osc.stop(now + delay + dur);
+      };
+
+      if (type === 'move') {
+        tone(190, 85, 0.075, 0.28, 'triangle', 0);
+      } else if (type === 'capture') {
+        tone(340, 110, 0.09, 0.35, 'sawtooth', 0);
+        tone(160, 60, 0.08, 0.25, 'triangle', 0.02);
+      } else if (type === 'castle') {
+        tone(200, 95, 0.065, 0.25, 'triangle', 0);
+        tone(230, 105, 0.065, 0.25, 'triangle', 0.09);
+      } else if (type === 'check') {
+        tone(660, 580, 0.11, 0.24, 'sine', 0);
+        tone(880, 780, 0.14, 0.24, 'sine', 0.11);
+      } else if (type === 'blunder') {
+        tone(175, 115, 0.22, 0.26, 'sawtooth', 0);
+        tone(130, 85, 0.26, 0.24, 'triangle', 0.12);
+      } else if (type === 'solved') {
+        tone(523.25, 523.25, 0.12, 0.22, 'sine', 0);
+        tone(659.25, 659.25, 0.12, 0.22, 'sine', 0.09);
+        tone(783.99, 1046.5, 0.22, 0.25, 'sine', 0.18);
+      }
+    }
+
+    function playSoundForMove(moveObj) {
+      if (!moveObj) return;
+      if (moveObj.san && (moveObj.san.includes('+') || moveObj.san.includes('#'))) {
+        playChessSound('check');
+      } else if (moveObj.flags && (moveObj.flags.includes('k') || moveObj.flags.includes('q'))) {
+        playChessSound('castle');
+      } else if (moveObj.captured) {
+        playChessSound('capture');
+      } else {
+        playChessSound('move');
+      }
+    }
+
+    /* ==========================================================================
        ВЕКТОРНЫЕ ШАХМАТНЫЕ ФИГУРЫ И ИКОНКИ КОРОЛЕЙ
        ========================================================================== */
     const PIECE_SVGS = {
@@ -592,35 +760,24 @@
     };
 
     /* ==========================================================================
-       АВАТАРКИ НАСТАВНИКОВ (НАСТОЯЩАЯ КАРТИНКА РЕЙ + ЗАГРУЗКА ИЗ ГАЛЕРЕИ)
+       АВАТАРКИ НАСТАВНИКОВ (REI.PNG + ЗАГРУЗКА ИЗ ГАЛЕРЕИ + ЧИСТЫЙ БЕЙДЖ REI·00)
        ========================================================================== */
-    const DEFAULT_REI_URLS = [
-      'rei.png',
-      'https://upload.wikimedia.org/wikipedia/en/a/a7/Rei_Ayanami_Evangelion.png',
-      'https://static.wikia.nocookie.net/evangelion/images/3/3e/Rei_Ayanami_OP.png'
-    ];
-
     function getReiAvatarHtml() {
       const customDataUrl = localStorage.getItem('coachai_rei_custom_img');
       if (customDataUrl) {
         return `<img src="${customDataUrl}" alt="Рей Аянами" class="w-full h-full object-cover object-top" />`;
       }
       return `
-        <div class="w-full h-full relative bg-[#0c1526] flex items-center justify-center overflow-hidden">
+        <div class="w-full h-full relative bg-gradient-to-br from-[#0f2942] via-[#0b192c] to-[#060d18] flex items-center justify-center overflow-hidden">
           <img
-            src="${DEFAULT_REI_URLS[0]}"
-            data-fallback1="${DEFAULT_REI_URLS[1]}"
-            data-fallback2="${DEFAULT_REI_URLS[2]}"
+            src="rei.png"
             alt="Рей Аянами"
             class="w-full h-full object-cover object-top"
-            onerror="
-              if (!this.dataset.step) { this.dataset.step = '1'; this.src = this.dataset.fallback1; }
-              else if (this.dataset.step === '1') { this.dataset.step = '2'; this.src = this.dataset.fallback2; }
-              else { this.style.display = 'none'; this.nextElementSibling.style.display = 'flex'; }
-            "
+            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
           />
-          <div style="display:none;" class="w-full h-full items-center justify-center bg-gradient-to-br from-sky-900 to-slate-950 text-sky-300 font-black text-xs tracking-tighter">
-            REI·00
+          <div style="display:none;" class="w-full h-full flex-col items-center justify-center text-center">
+            <span class="font-mono text-[10px] font-black tracking-tighter text-sky-300 leading-none">REI</span>
+            <span class="font-mono text-[8px] font-extrabold text-orange-400 mt-0.5 leading-none">00</span>
           </div>
         </div>`;
     }
@@ -640,7 +797,7 @@
         readyTitle: 'Начало партии',
         readyText: 'Нажми «Анализ», чтобы тренер сверил ходы с базой мастеров ФИДЕ и движком.',
         analyzingText: 'Сверяю твои ходы с базой мастеров ФИДЕ, таблицами эндшпиля и Stockfish...',
-        doneText: (b, m, br) => `Разбор завершён! Найдено зевков: ${b}, ошибок: ${m}, блестящих ходов: ${br}. Листай стрелками или жми «Ошибка».`,
+        doneText: (b, m, br) => `Разбор завершён! Найдено зевков: ${b}, ошибок: ${m}, блестящих ходов: ${br}. Все ошибки добавлены во вкладку «Задачи».`,
         oppMove: (san) => `Соперник сыграл ${san}. Посмотрим, как ты ответил.`
       },
       rei: {
@@ -648,7 +805,7 @@
         readyTitle: 'Синхронизация готова',
         readyText: 'Я здесь. Приказов нет, но я проверю твои ходы на точность. Запусти анализ.',
         analyzingText: 'Идёт сверка с базой мастеров и расчёт ветвей... Подожди немного.',
-        doneText: (b, m, br) => `Синхронизация завершена. Критических сбоев (зевков): ${b}, отклонений: ${m}, точных жертв: ${br}.`,
+        doneText: (b, m, br) => `Синхронизация завершена. Критических сбоев (зевков): ${b}, отклонений: ${m}, точных жертв: ${br}. Ошибки загружены в тренажёр задач.`,
         oppMove: (san) => `Оппонент сделал ход ${san}. Твой следующий шаг.`
       }
     };
@@ -784,11 +941,57 @@
       blunder:    { label: 'Зевок ??',      color: '#f43f5e', bg: 'rgba(244,63,94,0.22)',  badge: '??' }
     };
 
+    /* ==========================================================================
+       БАЗОВЫЙ НАБОР ТАКТИЧЕСКИХ ЗАДАЧ + АВТОСБОР ИЗ ПАРТИЙ WAGONIA
+       ========================================================================== */
+    const STARTER_PUZZLES = [
+      {
+        fen: 'r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 4 4',
+        bestMove: 'h5f7',
+        source: 'Детский мат · Базовая тактика',
+        hintText: 'Атакуй самое уязвимое поле f7 рядом с чёрным королём.'
+      },
+      {
+        fen: 'r1b1k2r/ppppqppp/2n2n2/2b1p3/2B1P3/2NP1N2/PPP2PPP/R1BQ1RK1 b kq - 0 6',
+        bestMove: 'c8g4',
+        source: 'Связка коня · Дебютная тактика',
+        hintText: 'Свяжи белого коня f3 с ферзём слоном на g4.'
+      },
+      {
+        fen: '3r2k1/5ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1',
+        bestMove: 'e1e8',
+        source: 'Мат по 8-й горизонтали · Эндшпиль',
+        hintText: 'У чёрного короля нет форточки на 8-й линии.'
+      },
+      {
+        fen: 'r2qkb1r/pp2pppp/2np1n2/2p5/4P1b1/2NP1N2/PPP1BPPP/R1BQ1RK1 w kq - 2 7',
+        bestMove: 'f3d4',
+        source: 'Вскрытие центра · Миттельшпиль',
+        hintText: 'Освободи слона e2 и переведи коня в центр на d4.'
+      },
+      {
+        fen: '2r3k1/pp3ppp/2n1b3/8/3N4/2P2P2/PP4PP/3R2K1 w - - 0 18',
+        bestMove: 'd4e6',
+        source: 'Разрушение пешечного прикрытия',
+        hintText: 'Забери активного слона e6 и сдвой пешки сопернику.'
+      }
+    ];
+
+    let puzzlePool = [...STARTER_PUZZLES];
+    let currentPuzzleIdx = 0;
+    let puzzleChess = new Chess();
+    let puzzleSelectedSq = null;
+    let puzzleSolvedState = false;
+    let puzzleWrongSq = null;
+    let puzzleStreak = Number(localStorage.getItem('coachai_p_streak')) || 0;
+    let puzzleTotalSolved = Number(localStorage.getItem('coachai_p_total')) || 0;
+
     let chess = new Chess();
     let gameHistory = [];
     let currentPly = 0;
     let boardFlipped = false;
     let userColor = 'w';
+    let currentOpponentName = 'Соперник';
     let selectedSq = null;
     let analysisResults = [];
     let allUserGames = [];
@@ -868,15 +1071,16 @@
     async function checkMastersBook(fenBefore, moveUci) {
       try {
         const res = await fetch(`https://explorer.lichess.ovh/masters?fen=${encodeURIComponent(fenBefore)}&moves=12`);
-        if (!res.ok) return false;
+        if (!res.ok) return { isBook: false, openingName: null };
         const data = await res.json();
-        if (!data || !Array.isArray(data.moves)) return false;
+        const openingName = data && data.opening ? data.opening.name : null;
+        if (!data || !Array.isArray(data.moves)) return { isBook: false, openingName };
         const found = data.moves.find(m => m.uci === moveUci);
-        if (!found) return false;
+        if (!found) return { isBook: false, openingName };
         const total = (found.white || 0) + (found.draws || 0) + (found.black || 0);
-        return total >= 5;
+        return { isBook: total >= 5, openingName };
       } catch {
-        return false;
+        return { isBook: false, openingName: null };
       }
     }
 
@@ -927,12 +1131,16 @@
 
       const profile = COACH_PROFILES[activeCoach];
       document.getElementById('moveBadge').classList.add('hidden');
+      document.getElementById('trapBadge').classList.add('hidden');
       document.getElementById('moveTitle').textContent = 'Анализ позиции...';
       document.getElementById('coachText').textContent = profile.analyzingText;
 
       analysisResults = [];
       let prevEval = { cp: 20, bestMove: 'e2e4' };
       const tempChess = new Chess();
+      let detectedOpening = null;
+      let wasInBook = true;
+      const harvestedPuzzles = [];
 
       for (let i = 0; i < gameHistory.length; i++) {
         const moveObj = gameHistory[i];
@@ -941,7 +1149,13 @@
         const moverColor = moveObj.color;
         const isUserMove = moverColor === userColor;
 
-        const isBook = (isUserMove && i < 16) ? await checkMastersBook(fenBefore, moveUci) : false;
+        let isBook = false;
+        if (i < 16) {
+          const bookInfo = await checkMastersBook(fenBefore, moveUci);
+          isBook = isUserMove ? bookInfo.isBook : false;
+          if (bookInfo.openingName) detectedOpening = bookInfo.openingName;
+        }
+
         tempChess.move(moveObj);
         const fenAfter = tempChess.fen();
 
@@ -953,8 +1167,8 @@
 
         let cls = null;
         let phrase = '';
+        let isOpeningTrap = false;
 
-        // Оцениваем и подбираем реплику СТРОГО для ходов самого пользователя
         if (isUserMove) {
           const wpBeforeWhite = cpToWinProb(prevEval.cp);
           const wpAfterWhite = cpToWinProb(evalAfter.cp);
@@ -964,8 +1178,27 @@
           const isSac = Boolean(moveObj.captured && ['q', 'r', 'b', 'n'].includes(moveObj.piece) && moveObj.captured === 'p');
           cls = classifyMove(winBefore, winAfter, prevEval.bestMove === moveUci, isBook, prevEval.cp, evalAfter.cp, isSac);
 
+          // Детектор дебютной ловушки / раннего выхода из теории (до 10-го полного хода = 20 полуходов)
+          if (!isBook && wasInBook && i < 20 && ['mistake', 'blunder', 'miss'].includes(cls)) {
+            isOpeningTrap = true;
+          }
+          if (!isBook) wasInBook = false;
+
           const linesPool = COACH_LINES[activeCoach][cls];
-          phrase = linesPool[i % linesPool.length];
+          phrase = isOpeningTrap
+            ? `Раннее отклонение от теории в дебюте (${detectedOpening || 'дебютная линия'}) привело к потере контроля. ` + linesPool[i % linesPool.length]
+            : linesPool[i % linesPool.length];
+
+          // Собираем задачи из собственных ошибок/зевков пользователя
+          if (['mistake', 'blunder', 'miss'].includes(cls) && prevEval.bestMove && prevEval.bestMove.length >= 4) {
+            const moveNum = Math.ceil((i + 1) / 2);
+            harvestedPuzzles.push({
+              fen: fenBefore,
+              bestMove: prevEval.bestMove.slice(0, 4),
+              source: `Твоя партия vs ${currentOpponentName} (ход ${moveNum})`,
+              hintText: `В партии здесь было сыграно ${moveObj.san}. Найди точное опровержение!`
+            });
+          }
         }
 
         analysisResults.push({
@@ -973,6 +1206,7 @@
           san: moveObj.san,
           color: moverColor,
           isUserMove,
+          isOpeningTrap,
           cls,
           cp: evalAfter.cp,
           bestMove: isUserMove ? prevEval.bestMove : null,
@@ -983,6 +1217,19 @@
         const pct = Math.round(((i + 1) / gameHistory.length) * 100);
         progBar.style.width = `${pct}%`;
         document.getElementById('engineStatus').textContent = `Анализ: ${i + 1} / ${gameHistory.length} (${pct}%)`;
+      }
+
+      if (detectedOpening) {
+        document.getElementById('openingSubtitle').textContent = `Дебют: ${detectedOpening}`;
+      }
+
+      // Добавляем собранные ошибки из партии в начало пула задач
+      if (harvestedPuzzles.length) {
+        puzzlePool = [...harvestedPuzzles, ...STARTER_PUZZLES];
+        currentPuzzleIdx = 0;
+        document.getElementById('puzzlesBadgeCount').textContent = puzzlePool.length;
+        document.getElementById('btnTrainMistakesShortcut').classList.remove('hidden');
+        loadPuzzle(0);
       }
 
       btn.disabled = false;
@@ -997,6 +1244,7 @@
       const brilliants = userRes.filter(r => r.cls === 'brilliant').length;
 
       document.getElementById('moveBadge').classList.add('hidden');
+      document.getElementById('trapBadge').classList.add('hidden');
       document.getElementById('moveTitle').textContent = 'Разбор готов';
       document.getElementById('coachText').textContent = profile.doneText(blunders, mistakes, brilliants);
       if (currentPly > 0) updateCoachPanelForPly(currentPly);
@@ -1054,11 +1302,11 @@
       renderArrows();
     }
 
-    function sqToCoords(sq) {
+    function sqToCoords(sq, flipped = boardFlipped) {
       const file = sq.charCodeAt(0) - 97;
       const rank = 8 - parseInt(sq[1], 10);
-      const col = boardFlipped ? 7 - file : file;
-      const row = boardFlipped ? 7 - rank : rank;
+      const col = flipped ? 7 - file : file;
+      const row = flipped ? 7 - rank : rank;
       return { x: col * 100 + 50, y: row * 100 + 50 };
     }
 
@@ -1081,7 +1329,7 @@
       const startPos = sqToGridPos(fromSq);
       const endPos = sqToGridPos(toSq);
 
-      const destCell = document.querySelector(`[data-sq="${toSq}"]`);
+      const destCell = document.querySelector(`#chessBoard [data-sq="${toSq}"]`);
       const destPieceEl = destCell ? destCell.querySelector('.piece-svg') : null;
       if (destPieceEl) destPieceEl.style.opacity = '0';
 
@@ -1109,6 +1357,20 @@
       }, 390);
     }
 
+    function drawArrowOnSvg(svgEl, fromSq, toSq, color = '#22c55e', flipped = boardFlipped) {
+      const p1 = sqToCoords(fromSq, flipped);
+      const p2 = sqToCoords(toSq, flipped);
+      const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+      const headLen = 28;
+      const endX = p2.x - Math.cos(angle) * 14;
+      const endY = p2.y - Math.sin(angle) * 14;
+
+      svgEl.innerHTML = `
+        <line x1="${p1.x}" y1="${p1.y}" x2="${endX}" y2="${endY}" stroke="${color}" stroke-width="14" stroke-linecap="round" opacity="0.86"/>
+        <polygon points="${p2.x},${p2.y} ${p2.x - headLen * Math.cos(angle - Math.PI / 6)},${p2.y - headLen * Math.sin(angle - Math.PI / 6)} ${p2.x - headLen * Math.cos(angle + Math.PI / 6)},${p2.y - headLen * Math.sin(angle + Math.PI / 6)}" fill="${color}" opacity="0.94"/>
+      `;
+    }
+
     function renderArrows() {
       const svg = document.getElementById('boardArrows');
       svg.innerHTML = '';
@@ -1117,19 +1379,7 @@
       if (!res.isUserMove || !res.bestMove || res.bestMove.length < 4) return;
       if (!['inaccuracy', 'mistake', 'miss', 'blunder'].includes(res.cls)) return;
 
-      const from = res.bestMove.slice(0, 2);
-      const to = res.bestMove.slice(2, 4);
-      const p1 = sqToCoords(from);
-      const p2 = sqToCoords(to);
-      const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
-      const headLen = 28;
-      const endX = p2.x - Math.cos(angle) * 14;
-      const endY = p2.y - Math.sin(angle) * 14;
-
-      svg.innerHTML = `
-        <line x1="${p1.x}" y1="${p1.y}" x2="${endX}" y2="${endY}" stroke="#22c55e" stroke-width="14" stroke-linecap="round" opacity="0.85"/>
-        <polygon points="${p2.x},${p2.y} ${p2.x - headLen * Math.cos(angle - Math.PI / 6)},${p2.y - headLen * Math.sin(angle - Math.PI / 6)} ${p2.x - headLen * Math.cos(angle + Math.PI / 6)},${p2.y - headLen * Math.sin(angle + Math.PI / 6)}" fill="#22c55e" opacity="0.92"/>
-      `;
+      drawArrowOnSvg(svg, res.bestMove.slice(0, 2), res.bestMove.slice(2, 4), '#22c55e', boardFlipped);
     }
 
     function handleSquareClick(sq) {
@@ -1153,6 +1403,7 @@
         gameHistory.push(move);
         currentPly = gameHistory.length;
         analysisResults = [];
+        playSoundForMove(move);
       }
       renderBoard();
       updateCoachPanelForPly(currentPly);
@@ -1172,6 +1423,15 @@
       selectedSq = null;
       renderBoard();
       updateCoachPanelForPly(currentPly);
+
+      const res = currentPly > 0 ? analysisResults[currentPly - 1] : null;
+      if (res && res.isUserMove && res.cls === 'blunder') {
+        playChessSound('blunder');
+      } else if (diff === 1 && gameHistory[currentPly - 1]) {
+        playSoundForMove(gameHistory[currentPly - 1]);
+      } else if (diff === -1 && gameHistory[prevPly - 1]) {
+        playChessSound('move');
+      }
 
       if (animate && Math.abs(diff) === 1) {
         if (diff === 1 && gameHistory[currentPly - 1]) {
@@ -1219,8 +1479,11 @@
     function updateCoachPanelForPly(ply) {
       const profile = COACH_PROFILES[activeCoach];
       const badgeEl = document.getElementById('moveBadge');
+      const trapEl = document.getElementById('trapBadge');
       const titleEl = document.getElementById('moveTitle');
       const textEl = document.getElementById('coachText');
+
+      trapEl.classList.add('hidden');
 
       if (ply === 0) {
         badgeEl.classList.add('hidden');
@@ -1257,6 +1520,10 @@
       badgeEl.style.color = meta.color;
       badgeEl.style.background = meta.bg;
 
+      if (res.isOpeningTrap) {
+        trapEl.classList.remove('hidden');
+      }
+
       titleEl.textContent = `${moveNum}${move.san}`;
       const bestHint = (['inaccuracy', 'mistake', 'miss', 'blunder'].includes(res.cls) && res.bestMove)
         ? ` Лучше было пойти ${res.bestMove.slice(0, 2)}→${res.bestMove.slice(2, 4)}.`
@@ -1278,15 +1545,199 @@
       list.innerHTML = mistakes.map(m => {
         const meta = CLASS_META[m.cls];
         const moveNum = Math.ceil(m.ply / 2) + (m.color === 'w' ? '.' : '...');
+        const trapTag = m.isOpeningTrap ? `<span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">Дебют</span>` : '';
         return `
           <button onclick="goToMove(${m.ply}, true)" class="w-full px-3 py-2 rounded-xl flex items-center justify-between text-left transition-colors hover:bg-white/5" style="background: rgba(255,255,255,0.03);">
             <div class="flex items-center gap-2 min-w-0">
               <span class="font-mono text-xs font-black px-1.5 py-0.5 rounded" style="color: ${meta.color}; background: ${meta.bg};">${meta.badge}</span>
               <span class="font-mono text-xs font-black">${moveNum} ${m.san}</span>
+              ${trapTag}
             </div>
             <span class="font-mono text-[11px] font-bold" style="color: var(--text-secondary);">Лучше: ${m.bestMove ? m.bestMove.slice(0, 4) : '—'}</span>
           </button>`;
       }).join('');
+    }
+
+    /* ==========================================================================
+       ВКЛАДКА 2: ИНТЕРАКТИВНЫЙ ТРЕНАЖЁР ЗАДАЧ (BLUNDER TRAINER)
+       ========================================================================== */
+    function loadPuzzle(idx) {
+      if (!puzzlePool.length) return;
+      currentPuzzleIdx = ((idx % puzzlePool.length) + puzzlePool.length) % puzzlePool.length;
+      const puz = puzzlePool[currentPuzzleIdx];
+      puzzleChess = new Chess(puz.fen);
+      puzzleSelectedSq = null;
+      puzzleSolvedState = false;
+      puzzleWrongSq = null;
+
+      const turn = puzzleChess.turn();
+      const dot = document.getElementById('puzzleTurnDot');
+      dot.className = turn === 'w'
+        ? 'w-3 h-3 rounded-full bg-white border border-slate-500 shrink-0'
+        : 'w-3 h-3 rounded-full bg-slate-900 border border-slate-400 shrink-0';
+
+      document.getElementById('puzzlePromptTitle').textContent = `Найди лучший ход за ${turn === 'w' ? 'Белых' : 'Чёрных'}`;
+      document.getElementById('puzzleSourceSubtitle').textContent = `${puz.source} · Задача ${currentPuzzleIdx + 1} из ${puzzlePool.length}`;
+
+      const badge = document.getElementById('puzzleStatusBadge');
+      badge.textContent = 'Поиск решения';
+      badge.className = 'text-[11px] font-black px-2 py-0.5 rounded-lg bg-sky-500/20 text-sky-300';
+
+      document.getElementById('puzzleCoachText').textContent = activeCoach === 'rei'
+        ? 'Позиция зафиксирована. Найди оптимальный шаг, чтобы восстановить синхронизацию.'
+        : 'Посмотри на тактические связки и незащищённые фигуры. Какой ход здесь побеждает?';
+
+      document.getElementById('puzzleArrows').innerHTML = '';
+      renderPuzzleBoard();
+    }
+
+    function renderPuzzleBoard() {
+      const boardEl = document.getElementById('puzzleBoard');
+      boardEl.innerHTML = '';
+      const puz = puzzlePool[currentPuzzleIdx];
+      const flipped = puz && puz.fen.split(' ')[1] === 'b';
+      const position = puzzleChess.board();
+      const files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+      const ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
+
+      for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+          const row = flipped ? 7 - r : r;
+          const col = flipped ? 7 - c : c;
+          const sqName = files[col] + ranks[row];
+          const isLight = (row + col) % 2 === 0;
+          const piece = position[row][col];
+
+          const cell = document.createElement('div');
+          cell.className = `relative flex items-center justify-center select-none cursor-pointer ${isLight ? 'sq-light' : 'sq-dark'}`;
+          if (puzzleSelectedSq === sqName) cell.classList.add('sq-selected');
+          if (puzzleWrongSq === sqName) cell.classList.add('sq-wrong');
+          if (puzzleSolvedState && puz.bestMove.slice(2, 4) === sqName) cell.classList.add('sq-solved');
+
+          if (c === 0) {
+            const rankLbl = document.createElement('span');
+            rankLbl.className = 'absolute top-0.5 left-1 font-mono text-[9px] font-black opacity-65 pointer-events-none';
+            rankLbl.textContent = ranks[row];
+            cell.appendChild(rankLbl);
+          }
+          if (r === 7) {
+            const fileLbl = document.createElement('span');
+            fileLbl.className = 'absolute bottom-0.5 right-1 font-mono text-[9px] font-black opacity-65 pointer-events-none';
+            fileLbl.textContent = files[col];
+            cell.appendChild(fileLbl);
+          }
+
+          if (piece) {
+            const key = piece.color + piece.type.toUpperCase();
+            cell.innerHTML += PIECE_SVGS[key] || '';
+          }
+
+          cell.onclick = () => handlePuzzleSquareClick(sqName);
+          boardEl.appendChild(cell);
+        }
+      }
+    }
+
+    function handlePuzzleSquareClick(sq) {
+      if (puzzleSolvedState) return;
+      const puz = puzzlePool[currentPuzzleIdx];
+      const flipped = puz.fen.split(' ')[1] === 'b';
+
+      if (!puzzleSelectedSq) {
+        const piece = puzzleChess.get(sq);
+        if (piece && piece.color === puzzleChess.turn()) {
+          puzzleSelectedSq = sq;
+          puzzleWrongSq = null;
+          renderPuzzleBoard();
+        }
+        return;
+      }
+
+      if (puzzleSelectedSq === sq) {
+        puzzleSelectedSq = null;
+        renderPuzzleBoard();
+        return;
+      }
+
+      const attemptUci = puzzleSelectedSq + sq;
+      const move = puzzleChess.move({ from: puzzleSelectedSq, to: sq, promotion: 'q' });
+      puzzleSelectedSq = null;
+
+      if (!move) {
+        const piece = puzzleChess.get(sq);
+        if (piece && piece.color === puzzleChess.turn()) {
+          puzzleSelectedSq = sq;
+        }
+        renderPuzzleBoard();
+        return;
+      }
+
+      const isMate = puzzleChess.in_checkmate();
+      if (attemptUci === puz.bestMove.slice(0, 4) || isMate) {
+        puzzleSolvedState = true;
+        puzzleStreak++;
+        puzzleTotalSolved++;
+        localStorage.setItem('coachai_p_streak', puzzleStreak);
+        localStorage.setItem('coachai_p_total', puzzleTotalSolved);
+        updatePuzzleScoreUI();
+
+        playChessSound('solved');
+        const badge = document.getElementById('puzzleStatusBadge');
+        badge.textContent = 'Решено ★';
+        badge.className = 'text-[11px] font-black px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-300';
+
+        document.getElementById('puzzleCoachText').textContent = activeCoach === 'rei'
+          ? `Точное исполнение (${move.san}). Синхронизация восстановлена. Можем переходить к следующей позиции.`
+          : `Отлично! Ход ${move.san} полностью решает задачу. Так держать!`;
+
+        renderPuzzleBoard();
+        drawArrowOnSvg(document.getElementById('puzzleArrows'), puz.bestMove.slice(0, 2), puz.bestMove.slice(2, 4), '#22c55e', flipped);
+      } else {
+        // Неверный ход — откатываем и подсвечиваем ошибку
+        puzzleChess.undo();
+        puzzleWrongSq = sq;
+        puzzleStreak = 0;
+        localStorage.setItem('coachai_p_streak', 0);
+        updatePuzzleScoreUI();
+
+        playChessSound('blunder');
+        const container = document.getElementById('puzzleBoardContainer');
+        container.classList.remove('board-shake');
+        void container.offsetWidth;
+        container.classList.add('board-shake');
+
+        const badge = document.getElementById('puzzleStatusBadge');
+        badge.textContent = 'Неточно';
+        badge.className = 'text-[11px] font-black px-2 py-0.5 rounded-lg bg-rose-500/20 text-rose-300';
+
+        document.getElementById('puzzleCoachText').textContent = activeCoach === 'rei'
+          ? `Ход ${move.san} не даёт нужного контроля. Попробуй найти более жёсткое продолжение.`
+          : `Ход ${move.san} упускает преимущество. Поищи более сильный тактический ресурс!`;
+
+        renderPuzzleBoard();
+      }
+    }
+
+    function showPuzzleHint() {
+      const puz = puzzlePool[currentPuzzleIdx];
+      if (!puz || puzzleSolvedState) return;
+      const fromSq = puz.bestMove.slice(0, 2);
+      puzzleSelectedSq = fromSq;
+      renderPuzzleBoard();
+      document.getElementById('puzzleCoachText').textContent = `Подсказка: ${puz.hintText} Обрати внимание на фигуру на поле ${fromSq}.`;
+    }
+
+    function retryCurrentPuzzle() {
+      loadPuzzle(currentPuzzleIdx);
+    }
+
+    function nextPuzzle() {
+      loadPuzzle(currentPuzzleIdx + 1);
+    }
+
+    function updatePuzzleScoreUI() {
+      document.getElementById('puzzleStreakVal').textContent = `🔥 ${puzzleStreak}`;
+      document.getElementById('puzzleSolvedTotal').textContent = puzzleTotalSolved;
     }
 
     /* ==========================================================================
@@ -1368,6 +1819,11 @@
       const isWhite = game.white.username.toLowerCase() === username;
       userColor = isWhite ? 'w' : 'b';
       boardFlipped = !isWhite;
+      currentOpponentName = isWhite ? game.black.username : game.white.username;
+
+      const ecoMatch = game.pgn.match(/\[ECOUrl "https:\/\/www\.chess\.com\/openings\/([^"]+)"\]/);
+      const openingTitle = ecoMatch ? decodeURIComponent(ecoMatch[1]).replace(/-/g, ' ').split(' ').slice(0, 4).join(' ') : 'Стандартная партия';
+      document.getElementById('openingSubtitle').textContent = `Дебют: ${openingTitle}`;
 
       const loader = new Chess();
       if (!loader.load_pgn(game.pgn)) return;
@@ -1571,31 +2027,40 @@
       }).join('');
     }
 
+    /* ==========================================================================
+       ПЕРЕКЛЮЧЕНИЕ 3 ВКЛАДОК
+       ========================================================================== */
     function switchTab(tab) {
-      const vAnalysis = document.getElementById('viewAnalysis');
-      const vStats = document.getElementById('viewStats');
-      const bAnalysis = document.getElementById('tabBtnAnalysis');
-      const bStats = document.getElementById('tabBtnStats');
+      const views = {
+        analysis: document.getElementById('viewAnalysis'),
+        puzzles: document.getElementById('viewPuzzles'),
+        stats: document.getElementById('viewStats')
+      };
+      const btns = {
+        analysis: document.getElementById('tabBtnAnalysis'),
+        puzzles: document.getElementById('tabBtnPuzzles'),
+        stats: document.getElementById('tabBtnStats')
+      };
 
-      if (tab === 'analysis') {
-        vAnalysis.classList.remove('hidden');
-        vStats.classList.add('hidden');
-        bAnalysis.className = 'px-3.5 py-1.5 rounded-xl text-xs font-black transition-all btn-accent';
-        bAnalysis.style.color = '';
-        bStats.className = 'px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all';
-        bStats.style.color = 'var(--text-secondary)';
-      } else {
-        vAnalysis.classList.add('hidden');
-        vStats.classList.remove('hidden');
-        bStats.className = 'px-3.5 py-1.5 rounded-xl text-xs font-black transition-all btn-accent';
-        bStats.style.color = '';
-        bAnalysis.className = 'px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all';
-        bAnalysis.style.color = 'var(--text-secondary)';
+      Object.keys(views).forEach(k => {
+        if (k === tab) {
+          views[k].classList.remove('hidden');
+          btns[k].className = 'px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-black transition-all btn-accent flex items-center gap-1';
+          btns[k].style.color = '';
+        } else {
+          views[k].classList.add('hidden');
+          btns[k].className = 'px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-extrabold transition-all flex items-center gap-1';
+          btns[k].style.color = 'var(--text-secondary)';
+        }
+      });
+
+      if (tab === 'puzzles') {
+        renderPuzzleBoard();
       }
     }
 
     /* ==========================================================================
-       УПРАВЛЕНИЕ НАСТАВНИКАМИ И ЗАГРУЗКА СВОЕЙ КАРТИНКИ РЕЙ
+       УПРАВЛЕНИЕ НАСТАВНИКАМИ И НАСТРОЙКАМИ
        ========================================================================== */
     function openCoachModal() {
       document.getElementById('coachModal').classList.remove('hidden');
@@ -1627,7 +2092,6 @@
       reader.onload = (ev) => {
         const img = new Image();
         img.onload = () => {
-          // Сжимаем до 256x256 чтобы гарантированно влезло в localStorage
           const canvas = document.createElement('canvas');
           const size = 256;
           canvas.width = size;
@@ -1664,6 +2128,9 @@
       document.getElementById('coachAvatar').innerHTML = activeAvatarHtml;
       document.getElementById('coachNameBadge').textContent = profile.name;
 
+      document.getElementById('puzzleCoachAvatar').innerHTML = activeAvatarHtml;
+      document.getElementById('puzzleCoachName').textContent = profile.name;
+
       document.getElementById('modalAvatarSloane').innerHTML = SLOANE_AVATAR_HTML;
       document.getElementById('modalAvatarRei').innerHTML = reiHtml;
 
@@ -1699,6 +2166,13 @@
     }
     function closeSettings() { document.getElementById('settingsModal').classList.add('hidden'); }
 
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      localStorage.setItem('coachai_sound', soundEnabled ? 'on' : 'off');
+      syncSettingsUI();
+      if (soundEnabled) playChessSound('move');
+    }
+
     function setTheme(theme) {
       currentTheme = theme;
       document.documentElement.setAttribute('data-theme', theme);
@@ -1713,6 +2187,12 @@
     }
 
     function syncSettingsUI() {
+      const sndBtn = document.getElementById('btnSoundToggle');
+      if (sndBtn) {
+        sndBtn.textContent = soundEnabled ? 'Вкл' : 'Выкл';
+        sndBtn.className = soundEnabled ? 'px-3.5 py-1.5 rounded-xl text-xs font-black btn-accent' : 'px-3.5 py-1.5 rounded-xl text-xs font-black btn-surface';
+      }
+
       ['liquid-glass', 'midnight-slate', 'amoled-obsidian', 'classic-walnut'].forEach(t => {
         const btn = document.getElementById(`themeBtn-${t}`);
         if (!btn) return;
@@ -1742,6 +2222,7 @@
       analysisResults = [];
       userColor = 'w';
       boardFlipped = false;
+      currentOpponentName = 'PGN Партия';
       goToMove(gameHistory.length, false);
       renderMistakesList();
       closePgnModal();
@@ -1750,6 +2231,8 @@
     // Инициализация при запуске
     document.documentElement.setAttribute('data-theme', currentTheme);
     syncCoachUI();
+    updatePuzzleScoreUI();
+    loadPuzzle(0);
     renderBoard();
     initStockfish();
     fetchChessComGames();
